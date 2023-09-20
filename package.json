@@ -1,0 +1,25 @@
+{
+  "name": "quiz-warriors-server",
+  "version": "1.0.0",
+  "description": "Quiz Warriors Functions Server",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "env-cmd -f ./test/.env.test"
+  },
+  "author": "Ricardo Orozco Leon",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "aws-lambda": "^1.0.7",
+    "aws-sdk": "^2.1460.0",
+    "dynamodb-value": "^1.0.5",
+    "moment-timezone": "^0.5.43",
+    "serverless": "^3.35.2",
+    "serverless-plugin-typescript": "^2.1.5"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.121",
+    "typescript": "^5.2.2",
+    "env-cmd": "^10.1.0"
+  }
+}

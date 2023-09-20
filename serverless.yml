@@ -1,0 +1,125 @@
+service: quiz-warriors-server
+frameworkVersion: '3'
+
+plugins:
+  - serverless-plugin-typescript
+
+provider:
+  name: aws
+  architecture: x86_64
+  stage: dev
+  runtime: nodejs18.x
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USERS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.THEMES_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.QUESTIONS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ANSWERS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.QUESTIONS_TABLE}/index/${self:provider.environment.QUESTIONS_THEME_INDEX}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ANSWERS_TABLE}/index/${self:provider.environment.ANSWERS_QUESTION_INDEX}"
+  environment:
+    REGION: ${self:provider.region}
+    USERS_TABLE: ${self:provider.stage}-users
+    THEMES_TABLE: ${self:provider.stage}-themes
+    QUESTIONS_TABLE: ${self:provider.stage}-questions
+    QUESTIONS_THEME_INDEX: ${self:provider.stage}-questions-theme-index
+    ANSWERS_TABLE: ${self:provider.stage}-answers
+    ANSWERS_QUESTION_INDEX: ${self:provider.stage}-answers-question-index
+
+functions:
+  index:
+    handler: src/handler.index
+    events:
+      - http:
+          path: /api/v1/
+          method: get
+          cors: true
+  addUser:
+    handler: src/handler.addUser
+    events:
+      - http:
+          path: /api/v1/player
+          method: post
+          cors: true
+  getUser:
+    handler: src/handler.getUser
+    events:
+      - http:
+          path: /api/v1/player/{username}
+          method: get
+          cors: true
+  updateUser:
+    handler: src/handler.updateUser
+
+resources:
+  Resources:
+    users:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.USERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: username
+            AttributeType: S
+        KeySchema:
+          - AttributeName: username
+            KeyType: HASH
+    themes:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.THEMES_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+    questions:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.QUESTIONS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: themeId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.QUESTIONS_THEME_INDEX}
+            KeySchema:
+              - AttributeName: themeId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+    answers:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ANSWERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: questionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.ANSWERS_QUESTION_INDEX}
+            KeySchema:
+              - AttributeName: questionId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
